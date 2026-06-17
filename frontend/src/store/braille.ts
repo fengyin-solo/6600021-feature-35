@@ -1,14 +1,15 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { BRAILLE_MAP, textToBraille, brailleToText, dotsToUnicode } from '../utils/braille'
-import type { LearnMode } from '../types'
+import { BRAILLE_MAP, SINGLE_CHARS, DOUBLE_CHAR_COMBOS, textToBraille, brailleToText, dotsToUnicode } from '../utils/braille'
+import type { LearnMode, QuizMode } from '../types'
 
 export const useBrailleStore = defineStore('braille', () => {
   const inputText = ref('')
   const brailleOutput = ref<number[][]>([])
   const learnMode = ref<LearnMode>('charToBraille')
+  const quizMode = ref<QuizMode>('single')
   const quizChar = ref('')
-  const selectedDots = ref<number[]>([])
+  const selectedDotsList = ref<number[][]>([])
   const score = ref({ correct: 0, total: 0 })
   const history = ref<{ input: string; correct: boolean }[]>([])
 
@@ -21,28 +22,47 @@ export const useBrailleStore = defineStore('braille', () => {
   }
 
   function reverseTranslate() {
-    // Simple: take selectedDots and find matching char
-    return brailleToText(selectedDots.value)
+    const first = selectedDotsList.value[0] || []
+    return brailleToText(first)
+  }
+
+  function setQuizMode(mode: QuizMode) {
+    quizMode.value = mode
+    quizChar.value = ''
+    selectedDotsList.value = []
   }
 
   function generateQuiz() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    quizChar.value = chars[Math.floor(Math.random() * chars.length)]
-    selectedDots.value = []
+    if (quizMode.value === 'single') {
+      quizChar.value = SINGLE_CHARS[Math.floor(Math.random() * SINGLE_CHARS.length)]
+    } else {
+      quizChar.value = DOUBLE_CHAR_COMBOS[Math.floor(Math.random() * DOUBLE_CHAR_COMBOS.length)]
+    }
+    selectedDotsList.value = Array.from({ length: quizChar.value.length }, () => [])
   }
 
-  function toggleDot(dot: number) {
-    const idx = selectedDots.value.indexOf(dot)
-    if (idx >= 0) selectedDots.value.splice(idx, 1)
-    else selectedDots.value.push(dot)
+  function toggleDot(charIndex: number, dot: number) {
+    if (!selectedDotsList.value[charIndex]) return
+    const idx = selectedDotsList.value[charIndex].indexOf(dot)
+    if (idx >= 0) selectedDotsList.value[charIndex].splice(idx, 1)
+    else selectedDotsList.value[charIndex].push(dot)
   }
 
   function checkQuizAnswer() {
-    const correct = JSON.stringify([...selectedDots.value].sort()) === JSON.stringify([...(BRAILLE_MAP[quizChar.value] || [])].sort())
+    const expectedDots = textToBraille(quizChar.value)
+    let allCorrect = true
+    for (let i = 0; i < expectedDots.length; i++) {
+      const actual = selectedDotsList.value[i] || []
+      const expected = expectedDots[i] || []
+      if (JSON.stringify([...actual].sort()) !== JSON.stringify([...expected].sort())) {
+        allCorrect = false
+        break
+      }
+    }
     score.value.total++
-    if (correct) score.value.correct++
-    history.value.unshift({ input: quizChar.value, correct })
-    if (navigator.vibrate) navigator.vibrate(correct ? 100 : [100, 50, 100])
+    if (allCorrect) score.value.correct++
+    history.value.unshift({ input: quizChar.value, correct: allCorrect })
+    if (navigator.vibrate) navigator.vibrate(allCorrect ? 100 : [100, 50, 100])
     generateQuiz()
   }
 
@@ -62,8 +82,8 @@ export const useBrailleStore = defineStore('braille', () => {
   }
 
   return {
-    inputText, brailleOutput, learnMode, quizChar, selectedDots, score, history,
-    brailleUnicode, translate, reverseTranslate, generateQuiz, toggleDot,
+    inputText, brailleOutput, learnMode, quizMode, quizChar, selectedDotsList, score, history,
+    brailleUnicode, translate, reverseTranslate, setQuizMode, generateQuiz, toggleDot,
     checkQuizAnswer, resetScore, exportPDF
   }
 })

@@ -9,6 +9,20 @@ export const BRAILLE_MAP: Record<string, number[]> = {
   '0': [2,4,5], ' ': [],
 }
 
+export const SINGLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+export const DOUBLE_CHAR_COMBOS = [
+  'TH', 'HE', 'IN', 'ER', 'AN', 'RE', 'ON', 'AT', 'EN', 'ND',
+  'TI', 'ES', 'OR', 'TE', 'OF', 'ED', 'IS', 'IT', 'AL', 'AR',
+  'ST', 'TO', 'NT', 'NG', 'SE', 'HA', 'AS', 'OU', 'IO', 'LE',
+  'VE', 'CO', 'ME', 'DE', 'HI', 'RI', 'RO', 'IC', 'NE', 'EA',
+  'RA', 'CE', 'LI', 'CH', 'LL', 'BE', 'MA', 'SI', 'OM', 'UR',
+  'CA', 'EL', 'TA', 'LA', 'NS', 'DI', 'FO', 'HO', 'PE', 'SS',
+  'UN', 'MO', 'NO', 'WA', 'WI', 'ET', 'WE', 'NA', 'PA', 'MI',
+  'IM', 'UL', 'NI', 'TS', 'AM', 'BL', 'SU', 'OB', 'AB', 'ID',
+  'OW', 'WH', 'SH', 'CH', 'TH', 'PH', 'GH', 'KN', 'WR', 'QU'
+]
+
 // Dot positions in 2x3 grid (col, row): 1=(0,0), 2=(0,1), 3=(0,2), 4=(1,0), 5=(1,1), 6=(1,2)
 export const DOT_POSITIONS: Record<number, [number, number]> = {
   1: [0, 0], 2: [0, 1], 3: [0, 2],

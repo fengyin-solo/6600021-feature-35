@@ -5,3 +5,5 @@ export interface BrailleChar {
 }
 
 export type LearnMode = 'charToBraille' | 'brailleToChar' | 'dictation'
+
+export type QuizMode = 'single' | 'double'

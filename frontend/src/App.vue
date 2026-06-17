@@ -30,22 +30,44 @@
     <div v-if="activeTab === 'learn'" class="grid grid-cols-2 gap-4">
       <div class="bg-gray-900 rounded-xl p-4 flex flex-col items-center gap-4">
         <h3 class="text-purple-300 font-bold">猜盲文</h3>
+
+        <div class="flex gap-2 self-start">
+          <button v-for="m in quizModes" :key="m.id" @click="switchQuizMode(m.id)"
+            class="px-3 py-1 rounded text-xs"
+            :class="store.quizMode === m.id ? 'bg-indigo-500 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
+            {{ m.label }}
+          </button>
+        </div>
+
         <div v-if="!store.quizChar">
           <button @click="store.generateQuiz()" class="bg-purple-500 px-6 py-3 rounded-lg text-lg hover:bg-purple-400">
             开始训练
           </button>
         </div>
-        <div v-else class="flex flex-col items-center gap-3">
-          <div class="text-7xl font-bold text-purple-400">{{ store.quizChar }}</div>
-          <div class="text-sm text-gray-400">点击下方 6 点阵选择对应盲文</div>
-          <div class="grid grid-cols-2 gap-2 p-4 bg-gray-800 rounded-xl">
-            <button v-for="d in 6" :key="d" @click="store.toggleDot(d)"
-              class="w-14 h-14 rounded-full border-2 transition-all"
-              :class="store.selectedDots.includes(d) ? 'bg-purple-500 border-purple-400 scale-110' : 'bg-gray-700 border-gray-600 hover:border-purple-400'">
-              <span class="text-xs">{{ d }}</span>
-            </button>
+        <div v-else class="flex flex-col items-center gap-3 w-full">
+          <div class="flex items-center gap-4">
+            <div v-for="(ch, i) in store.quizChar.split('')" :key="i" class="flex flex-col items-center">
+              <div class="text-7xl font-bold text-purple-400">{{ ch }}</div>
+              <div class="text-xs text-gray-500 mt-1">第{{ i + 1 }}位</div>
+            </div>
           </div>
-          <button @click="store.checkQuizAnswer()" class="bg-purple-500 px-6 py-2 rounded hover:bg-purple-400">确认</button>
+          <div class="text-sm text-gray-400">依次为每个字母点击下方 6 点阵选择对应盲文</div>
+
+          <div class="flex flex-wrap gap-4 justify-center">
+            <div v-for="(ch, charIdx) in store.quizChar.split('')" :key="charIdx" class="flex flex-col items-center gap-2">
+              <div class="text-sm text-gray-400">{{ ch }}</div>
+              <div class="grid grid-cols-2 gap-2 p-4 bg-gray-800 rounded-xl">
+                <button v-for="d in 6" :key="d" @click="store.toggleDot(charIdx, d)"
+                  class="w-14 h-14 rounded-full border-2 transition-all"
+                  :class="(store.selectedDotsList[charIdx] || []).includes(d) ? 'bg-purple-500 border-purple-400 scale-110' : 'bg-gray-700 border-gray-600 hover:border-purple-400'">
+                  <span class="text-xs">{{ d }}</span>
+                </button>
+              </div>
+              <BrailleCell v-if="store.selectedDotsList[charIdx]" :dots="store.selectedDotsList[charIdx]" :size="30" />
+            </div>
+          </div>
+
+          <button @click="store.checkQuizAnswer()" class="bg-purple-500 px-6 py-2 rounded hover:bg-purple-400 mt-2">确认</button>
         </div>
       </div>
       <div class="bg-gray-900 rounded-xl p-4">
@@ -71,7 +93,7 @@
           <div v-for="(h, i) in store.history.slice(0, 20)" :key="i"
             class="flex justify-between bg-gray-800 rounded p-2 text-sm"
             :class="h.correct ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500'">
-            <span>{{ h.input }}</span><span>{{ h.correct ? '✓' : '✗' }}</span>
+            <span class="tracking-wider">{{ h.input }}</span><span>{{ h.correct ? '✓' : '✗' }}</span>
           </div>
         </div>
       </div>
@@ -100,6 +122,7 @@ import { ref } from 'vue'
 import { useBrailleStore } from './store/braille'
 import { BRAILLE_MAP } from './utils/braille'
 import BrailleCell from './components/BrailleCell.vue'
+import type { QuizMode } from './types'
 
 const store = useBrailleStore()
 const brailleMap = BRAILLE_MAP
@@ -108,7 +131,15 @@ const tabs = [
   { id: 'learn', label: '训练模式' },
   { id: 'ref', label: '速查表' },
 ]
+const quizModes = [
+  { id: 'single' as QuizMode, label: '单字母' },
+  { id: 'double' as QuizMode, label: '双字母组合' },
+]
 const activeTab = ref('translate')
+
+function switchQuizMode(mode: QuizMode) {
+  store.setQuizMode(mode)
+}
 
 function doExport() {
   const text = store.exportPDF()
